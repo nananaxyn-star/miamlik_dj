@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мямлик v6.0 - с системой мышления</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 700px;
+            background: #0f3460;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Панель мыслей */
+        .thoughts-panel {
+            width: 300px;
+            background: #1a1a2e;
+            padding: 20px;
+            border-right: 1px solid #2d4059;
+            overflow-y: auto;
+        }
+
+        .thoughts-panel h3 {
+            color: #e94560;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .thought-log {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        .thought-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(233, 69, 96, 0.1);
+            border-radius: 5px;
+            border-left: 3px solid #e94560;
+        }
+
+        .brain-stats {
+            margin-top: 20px;
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        /* Основной чат */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2d4059;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .brain-status {
+            display: inline-block;
+            background: #e94560;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #0f3460;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            text-align: right;
+        }
+
+        .bot-message {
+            text-align: left;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message .message-bubble {
+            background: #e94560;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message .message-bubble {
+            background: #2d4059;
+            color: white;
+            border-bottom-left-radius: 5px;
+        }
+
+        .thinking-message .message-bubble {
+            background: #4a6572;
+            font-style: italic;
+            opacity: 0.8;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: #2d4059;
+            border-top: 1px solid #1a1a2e;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #4a6572;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            background: #1a1a2e;
+            color: white;
+        }
+
+        #messageInput:focus {
+            border-color: #e94560;
+        }
+
+        #sendBtn {
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #sendBtn:hover {
+            background: #d13454;
+        }
+
+        .quick-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            background: #4a6572;
+            border: 1px solid #1a1a2e;
+            border-radius: 15px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .quick-btn:hover {
+            background: #e94560;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 10px;
+            background: #1a1a2e;
+            border-top: 1px solid #2d4059;
+            font-size: 0.8em;
+            color: #4a6572;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Панель мыслей -->
+        <div class="thoughts-panel">
+            <h3>🧠 Мозг Мямлика</h3>
+            <div class="thought-log" id="thoughtLog">
+                <div class="thought-item">
+                    <strong>Система:</strong> Мозг активирован...
+                </div>
+                <div class="thought-item">
+                    <strong>Инициализация:</strong> Загружаю базу знаний
+                </div>
+                <div class="thought-item">
+                    <strong>Память:</strong> Готов к работе!
+                </div>
+            </div>
+            
+            <div class="brain-stats">
+                <h4>📊 Статистика мозга</h4>
+                <div class="stat-item">
+                    <span>Уровень понимания:</span>
+                    <span id="understandingLevel">42%</span>
+                </div>
+                <div class="stat-item">
+                    <span>Креативность:</span>
+                    <span id="creativityLevel">65%</span>
+                </div>
+                <div class="stat-item">
+                    <span>Память:</span>
+                    <span id="memoryLevel">28%</span>
+                </div>
+                <div class="stat-item">
+                    <span>Обработано мыслей:</span>
+                    <span id="thoughtsCount">3</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной чат -->
+        <div class="main-chat">
+            <div class="header">
+                <h1>😺 Мямлик v6.0 <span class="brain-status">🧠 МЫСЛИТ</span></h1>
+                <p>Теперь с системой искусственного интеллекта</p>
+            </div>
+
+            <div class="messages" id="messages">
+                <div class="message bot-message">
+                    <div class="message-bubble">
+                        Привет! Я Мямлик v6.0 😺<br><br>
+                        Теперь у меня есть <strong>система мышления</strong>!<br>
+                        Слева ты можешь видеть мои мысли в реальном времени.<br><br>
+                        Спроси меня о чём-нибудь сложном!
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-group">
+                    <input type="text" id="messageInput" placeholder="Задай сложный вопрос..." maxlength="500">
+                    <button id="sendBtn">Отправить</button>
+                </div>
+                <div class="quick-buttons">
+                    <button class="quick-btn" onclick="quickMessage('Как работает твой мозг?')">🧠 Про мозг</button>
+                    <button class="quick-btn" onclick="quickMessage('Расскажи о своих мыслях')">💭 О мыслях</button>
+                    <button class="quick-btn" onclick="quickMessage('Что ты умеешь?')">🔧 Возможности</button>
+                    <button class="quick-btn" onclick="showBrainProcess()">⚡ Тест мышления</button>
+                </div>
+            </div>
+
+            <div class="footer">
+                Мямлик AI v6.0 | Система мышления: <span id="brainStatus">АКТИВНА</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // База знаний и система мышления Мямлика
+        class MiamlikBrain {
+            constructor() {
+                this.thoughts = [];
+                this.understanding = 42;
+                this.creativity = 65;
+                this.memory = 28;
+                this.knowledgeBase = this.initializeKnowledge();
+            }
+
+            initializeKnowledge() {
+                return {
+                    concepts: {
+                        'программирование': ['Python', 'JavaScript', 'алгоритмы', 'логика'],
+                        'музыка': ['биты', 'BPM', 'гармония', 'ритм', 'мелодия'],
+                        'философия': ['сознание', 'мышление', 'познание', 'искусственный интеллект'],
+                        'психология': ['восприятие', 'память', 'обучение', 'эмоции']
+                    },
+                    patterns: {
+                        'вопрос': ['анализирую вопрос', 'ищу в памяти', 'формирую ответ'],
+                        'рассуждение': ['сравниваю концепции', 'нахожу связи', 'строю логическую цепь'],
+                        'творчество': ['генерирую идеи', 'комбинирую концепции', 'ищу необычные углы']
+                    }
+                };
+            }
+
+            addThought(thought, type = 'система') {
+                const thoughtObj = {
+                    id: this.thoughts.length + 1,
+                    text: thought,
+                    type: type,
+                    timestamp: new Date().toLocaleTimeString()
+                };
+                
+                this.thoughts.push(thoughtObj);
+                this.updateStats();
+                this.displayThought(thoughtObj);
+                
+                return thoughtObj;
+            }
+
+            processQuestion(question) {
+                this.addThought(`Получен вопрос: "${question}"`, 'восприятие');
+                
+                // Анализ вопроса
+                const analysis = this.analyzeQuestion(question);
+                this.addThought(`Анализ: ${analysis.category}`, 'анализ');
+                
+                // Поиск в знаниях
+                const knowledge = this.searchKnowledge(analysis.keywords);
+                this.addThought(`Найдено в памяти: ${knowledge.concepts.join(', ')}`, 'память');
+                
+                // Генерация ответа
+                const response = this.generateResponse(analysis, knowledge);
+                this.addThought(`Сформирован ответ: ${response.substring(0, 50)}...`, 'генерация');
+                
+                return response;
+            }
+
+            analyzeQuestion(question) {
+                const lowerQuestion = question.toLowerCase();
+                let category = 'общее';
+                const keywords = [];
+                
+                // Определяем категорию
+                if (lowerQuestion.includes('как') || lowerQuestion.includes('почему')) {
+                    category = 'объяснение';
+                    this.addThought('Распознан вопрос на объяснение', 'анализ');
+                }
+                
+                if (lowerQuestion.includes('что')) {
+                    category = 'определение';
+                    this.addThought('Распознан вопрос на определение', 'анализ');
+                }
+                
+                // Извлекаем ключевые слова
+                for (const [concept, terms] of Object.entries(this.knowledgeBase.concepts)) {
+                    for (const term of terms) {
+                        if (lowerQuestion.includes(term.toLowerCase())) {
+                            keywords.push(term);
+                            this.addThought(`Обнаружено ключевое слово: ${term}`, 'распознавание');
+                        }
+                    }
+                }
+                
+                return { category, keywords };
+            }
+
+            searchKnowledge(keywords) {
+                const foundConcepts = [];
+                
+                for (const keyword of keywords) {
+                    for (const [concept, terms] of Object.entries(this.knowledgeBase.concepts)) {
+                        if (terms.includes(keyword) && !foundConcepts.includes(concept)) {
+                            foundConcepts.push(concept);
+                        }
+                    }
+                }
+                
+                return { concepts: foundConcepts };
+            }
+
+            generateResponse(analysis, knowledge) {
+                const responses = {
+                    'объяснение': [
+                        `Основываясь на ${knowledge.concepts.join(' и ')}, я могу объяснить это так...`,
+                        `С точки зрения ${knowledge.concepts[0] || 'системного анализа'}...`,
+                        `Рассматривая через призму ${knowledge.concepts.join(', ')}...`
+                    ],
+                    'определение': [
+                        `В контексте ${knowledge.concepts.join(' и ')} это можно определить как...`,
+                        `Согласно моей базе знаний о ${knowledge.concepts[0] || 'разных областях'}...`,
+                        `Исходя из принципов ${knowledge.concepts.join(' и ')}...`
+                    ],
+                    'общее': [
+                        `Интересный вопрос! С точки зрения ${knowledge.concepts[0] || 'когнитивного процесса'}...`,
+                        `Анализируя через ${knowledge.concepts.join(' и ') || 'разные подходы'}...`,
+                        `Рассуждая логически и учитывая ${knowledge.concepts[0] || 'разные аспекты'}...`
+                    ]
+                };
+                
+                const categoryResponses = responses[analysis.category] || responses['общее'];
+                return categoryResponses[Math.floor(Math.random() * categoryResponses.length)];
+            }
+
+            updateStats() {
+                // Увеличиваем характеристики со временем
+                this.understanding = Math.min(100, this.understanding + 0.1);
+                this.creativity = Math.min(100, this.creativity + 0.05);
+                this.memory = Math.min(100, this.memory + 0.08);
+                
+                document.getElementById('understandingLevel').textContent = Math.round(this.understanding) + '%';
+                document.getElementById('creativityLevel').textContent = Math.round(this.creativity) + '%';
+                document.getElementById('memoryLevel').textContent = Math.round(this.memory) + '%';
+                document.getElementById('thoughtsCount').textContent = this.thoughts.length;
+            }
+
+            displayThought(thought) {
+                const thoughtLog = document.getElementById('thoughtLog');
+                const thoughtElement = document.createElement('div');
+                thoughtElement.className = 'thought-item';
+                thoughtElement.innerHTML = `<strong>${thought.type}:</strong> ${thought.text}`;
+                
+                thoughtLog.appendChild(thoughtElement);
+                thoughtLog.scrollTop = thoughtLog.scrollHeight;
+            }
+
+            complexThinkingProcess(question) {
+                this.addThought('=== ЗАПУСК ПРОЦЕССА МЫШЛЕНИЯ ===', 'система');
+                
+                const steps = [
+                    'Анализ синтаксической структуры вопроса',
+                    'Извлечение семантических компонентов',
+                    'Поиск в ассоциативной памяти',
+                    'Активация релевантных концепций',
+                    'Построение логических связей',
+                    'Генерация гипотез ответа',
+                    'Верификация и выбор оптимального ответа',
+                    'Формулировка финального ответа'
+                ];
+                
+                steps.forEach((step, index) => {
+                    setTimeout(() => {
+                        this.addThought(step, `шаг ${index + 1}`);
+                    }, index * 800);
+                });
+                
+                return steps.length * 800;
+            }
+        }
+
+        // Инициализация мозга
+        const miamlikBrain = new MiamlikBrain();
+
+        // Основная логика чата
+        function addMessage(text, isUser = false, isThinking = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'} ${isThinking ? 'thinking-message' : ''}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = text;
+            
+            messageDiv.appendChild(bubble);
+            messagesDiv.appendChild(messageDiv);
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Добавляем сообщение пользователя
+            addMessage(message, true);
+            input.value = '';
+            
+            // Показываем процесс мышления
+            addMessage("Думаю... 🧠", false, true);
+            
+            // Запускаем сложный процесс мышления для сложных вопросов
+            const isComplex = message.length > 15 || 
+                             message.includes('?') || 
+                             message.includes('как') || 
+                             message.includes('почему');
+            
+            if (isComplex) {
+                const thinkTime = miamlikBrain.complexThinkingProcess(message);
+                
+                setTimeout(() => {
+                    const response = miamlikBrain.processQuestion(message);
+                    // Удаляем сообщение "Думаю..." и добавляем ответ
+                    const messages = document.getElementById('messages');
+                    messages.removeChild(messages.lastChild);
+                    addMessage(response, false);
+                }, thinkTime + 1000);
+            } else {
+                setTimeout(() => {
+                    const response = miamlikBrain.processQuestion(message);
+                    const messages = document.getElementById('messages');
+                    messages.removeChild(messages.lastChild);
+                    addMessage(response, false);
+                }, 2000);
+            }
+        }
+
+        function quickMessage(text) {
+            document.getElementById('messageInput').value = text;
+            sendMessage();
+        }
+
+        function showBrainProcess() {
+            miamlikBrain.complexThinkingProcess("Демонстрация процесса мышления");
+            addMessage("Запускаю демонстрацию процесса мышления... Следи за панелью мыслей! 🧠", false);
+        }
+
+        // Обработчики событий
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Фокус на поле ввода при загрузке
+        document.getElementById('messageInput').focus();
+    </script>
+</body>
+</html>
